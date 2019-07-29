@@ -1,0 +1,70 @@
+{% extends layout ?: "@CoreShopPayumBundle::layout.html.twig" %}
+
+{% block content %}
+    {{ parent() }}
+
+    <form id="payment-form" method="POST">
+        <div id="credit-card-fields"></div>
+
+        <input type="hidden" id="paymillToken" name="paymillToken"/>
+        <input type="button" value="Submit" onclick="submitForm()"/>
+    </form>
+{% endblock %}
+
+{% block footer %}
+    {{ parent() }}
+
+    {% block javascripts %}
+        <script type="text/javascript">
+            var PAYMILL_PUBLIC_KEY='{{ paymillPublicKey }}';
+        </script>
+        <script type="text/javascript" src="https://bridge.paymill.com/"></script>
+        <script type="text/javascript">
+            window.onload = function () {
+                initPayframe();
+            };
+
+            var options = {
+                lang: 'en'
+            };
+
+            var callback = function(error) {
+                //Frame could not be loaded, check error object for the reason
+                if (error) {
+                // Example: "container_not_found"
+                    console.log(error.apierror,error.message);
+                } else {
+                    //Frame was loaded successfully
+                }
+            };
+
+            var initPayframe = function() {
+                paymill.embedFrame('credit-card-fields', options, callback);
+            };
+
+            var submitForm = function () {
+                paymill.createTokenViaFrame({
+                        amount_int: {{ amount }},
+                        currency: '{{ currency }}',
+                        email: '{{ email }}'
+                    },
+                    function (error, result) {
+                        // Handle error or process result.
+                        if (error) {
+                            // Token could not be created, check error object for reason.
+                            console.log(error.apierror, error.message);
+                        } else {
+                            var form = document.getElementById("payment-form");
+                            var tokenField = document.getElementById("paymillToken");
+
+                            tokenField.value = result.token;
+                            form.submit();
+                        }
+                    }
+                );
+            }
+        </script>
+
+    {% endblock %}
+
+{% endblock %}
